@@ -22,10 +22,10 @@
 ;; primitive parsers
 (define (identity n) n)
 ;; return 
-(define (return v (size 0)) 
+(define (return v (size 0) (new-line 0)) 
   (lambda (in)
     (values v
-            (new-input in size))))
+            (new-input in size new-line))))
 
 ;; struct failed - represents failed parse... 
 (define-struct failed (pos) #:prefab)
@@ -35,13 +35,13 @@
 
 ;; fail - the parser that returns failed with the current port position. 
 (define (fail in) 
-  (values (make-failed (input-pos in))
+  (values (make-failed (input-bytes in))
           in)) 
 
 ;; SOF (start-of-file) 
 ;; returns true only when the input-pos = 0
 (define (SOF in) 
-  ((if (= (input-pos in) 0)
+  ((if (= (input-bytes in) 0)
        (return 'sof)
        fail) in)) 
 
@@ -55,6 +55,16 @@
     (let ((v (peek in))) 
       ((if (and (isa? v) (satisfy? v))
            (return v (size v))
+           fail) in))))
+
+;; item/incline
+;; this will automatically increment the line number. 
+;; only newline will be using this call. 
+(define (item/incline peek isa? satisfy? size)
+  (lambda (in)
+    (let ((v (peek in)))
+      ((if (and (isa? v) (satisfy? v))
+           (return v (size v) 1)
            fail) in))))
 
 ;; bytes=
@@ -77,17 +87,26 @@
             (comp? str s))
           (the-number size))))
 
+(define (string=/incline s (comp? string=?))
+  (let ((size (string-bytes/utf-8-length s)))
+    (item/incline (peek-string* size)
+                  string?
+                  (lambda (str)
+                    (comp? str s))
+                  (the-number size))))
+
 (define (string-ci= s) 
   (string= s string-ci=?))
 
 ;; byte-when 
+
 ;; return the next byte when satisfy matches
 (define (byte-when satisfy? (isa? byte?) (size (the-number 1)))
   (item peek-byte* isa? satisfy? size))
 
 ;; any-byte 
 ;; return the next byte 
-(define any-byte (byte-when (lambda (n) n)))
+(define any-byte (byte-when identity))
 
 ;; byte= 
 (define (byte= b) (byte-when (lambda (v)
@@ -95,7 +114,7 @@
 
 ;; EOF 
 ;; return if the next byte is eof 
-(define EOF (byte-when (lambda (n) n) eof-object? (the-number 0)))
+(define EOF (byte-when identity eof-object? (the-number 0)))
 
 ;; bits= 
 ;; matches a byte @ the bits level... (pass in the individual bits) 
@@ -120,17 +139,23 @@
 
 ;; char-when 
 ;; the fundamental character-based parser 
+;; 1 - we allow the flexibility
+;; 2 - we do not make the support for it... individuals need to provide the writing for it and hence it's their worry
+;; the second way is simpler - i.e. it's done via convention and hence not being paid for every time... 
 (define (char-when satisfy?)
   (item peek-char* char? satisfy? char-utf-8-length)) 
 
 ;; any-char 
 ;; return the next character 
-(define any-char (char-when (lambda (n) n)))
+(define any-char (char-when identity))
 
 ;; char= 
 ;; return the next character if it equals c 
 (define (char= c (comp? char=?) (trans identity)) 
   (char-when (lambda (v) (trans (comp? c v)))))
+
+(define (char=/incline c (comp? char=?) (trans identity))
+  (item/incline peek-char* char? (lambda (v) (trans (comp? c v))) char-utf-8-length))
 
 ;; char-ci= 
 (define (char-ci= c) (char= c char-ci=?))
@@ -269,4 +294,6 @@
          Literal-Parser/c
          char-not-part-of-chars
          char-not-part-of-string
+         string=/incline
+         char=/incline
          )

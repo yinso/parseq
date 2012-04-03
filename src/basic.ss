@@ -42,8 +42,20 @@
                                   #\A #\B #\C #\D #\E #\F 
                                   #\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9)))
 
+;; newline 
+(define newline
+  (choice (string=/incline "\r\n")
+          (char=/incline #\return)
+          (char=/incline #\newline)))
+
+
 ;; whitespace 
-(define whitespace (char-in '(#\space #\return #\newline #\tab #\vtab)))
+(define whitespace (choice newline (char-in '(#\space #\tab #\vtab))))
+
+;; whitespaces 
+;; parsing out all whitespaces together... 
+(define whitespaces (zero-many whitespace))
+
 
 (define not-whitespace (char-not-in '(#\space #\return #\newline #\tab #\vtab)))
 
@@ -184,17 +196,4 @@
 ;; choosing between single and double quotes 
 (define quoted-string 
   (choice single-quoted-string double-quoted-string))
-
-;; whitespaces 
-;; parsing out all whitespaces together... 
-(define whitespaces (zero-many whitespace))
-
-;; newline 
-(define newline 
-  (choice (seq r <- (char= #\return) 
-               n <- (char= #\newline)
-               (return (list r n)))
-          (char= #\return)
-          (char= #\newline)))
-
 (provide (all-defined-out)) 
