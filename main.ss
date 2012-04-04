@@ -12,21 +12,21 @@
 ;; yc 1/5/2010 - added token.ss 
 ;; yc 1/18/2010 - add reader.ss 
 
-(require "input.ss"
-         "util.ss"
-         "primitive.ss"
-         "combinator.ss"
-         "basic.ss"
-         "token.ss" 
-         "reader.ss"
+(require "src/input.ss"
+         "src/util.ss"
+         "src/primitive.ss"
+         "src/combinator.ss"
+         "src/basic.ss"
+         "src/token.ss" 
+         "src/reader.ss"
          )
-(provide (all-from-out "input.ss"
-                       "util.ss"
-                       "primitive.ss"
-                       "combinator.ss"
-                       "basic.ss"
-                       "token.ss" 
-                       "reader.ss"
+(provide (all-from-out "src/input.ss"
+                       "src/util.ss"
+                       "src/primitive.ss"
+                       "src/combinator.ss"
+                       "src/basic.ss"
+                       "src/token.ss" 
+                       "src/reader.ss"
                        )
          )
 
